@@ -1,15 +1,8 @@
----
-title: "Crime Clustering in Chicago"
-author: "Alan Zablocki"
-date: "August 3, 2016"
-output: 
-  html_document: 
-    keep_md: yes
----
+# Crime Clustering in Chicago
+Alan Zablocki  
+August 3, 2016  
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ## R Markdown
 
