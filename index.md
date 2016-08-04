@@ -224,18 +224,18 @@ str(cl)
 
 ```
 ## List of 9
-##  $ cluster     : Named int [1:804] 4 3 5 2 2 5 4 3 1 4 ...
+##  $ cluster     : Named int [1:804] 1 4 3 5 5 2 1 4 3 1 ...
 ##   ..- attr(*, "names")= chr [1:804] "54" "55" "62" "64" ...
 ##  $ centers     : num [1:5, 1:2] -87.6 -87.6 -87.6 -87.6 -87.6 ...
 ##   ..- attr(*, "dimnames")=List of 2
 ##   .. ..$ : chr [1:5] "1" "2" "3" "4" ...
 ##   .. ..$ : chr [1:2] "long" "lati"
 ##  $ totss       : num 0.31
-##  $ withinss    : num [1:5] 0.00924 0.00465 0.01126 0.01851 0.01298
-##  $ tot.withinss: num 0.0566
-##  $ betweenss   : num 0.254
-##  $ size        : int [1:5] 172 111 141 190 190
-##  $ iter        : int 4
+##  $ withinss    : num [1:5] 0.01345 0.00854 0.01852 0.00992 0.01005
+##  $ tot.withinss: num 0.0605
+##  $ betweenss   : num 0.25
+##  $ size        : int [1:5] 162 136 224 133 149
+##  $ iter        : int 5
 ##  $ ifault      : int 0
 ##  - attr(*, "class")= chr "kmeans"
 ```
@@ -392,3 +392,10 @@ ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = l
 ```
 
 ![](index_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+
+This kind of analysis has a broad applicability in terms of market use
+as well as individual use. For example, you could use this to identify crime hotspots, or areas with a lot of traffic accidents to devise safe walking routes for students and school children. I can see this as a great quantitative way of informing house buyers about different areas they might be looking at.
+
+There is informative power for a range of applications, e.g., looking at UChicago campus, there is definitely a bubble - which could be attributed to, for example, good or effective policing.
+
+So we have unsupervised classification as well as detection! In other words this can be used for monitoring practices,e.g., are certain policies (relating to combating crime) effective?

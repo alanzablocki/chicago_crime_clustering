@@ -207,3 +207,10 @@ We end with a coloured heat map with cluster solution using k-means with k=10.
 ```{r}
 ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + stat_density2d(aes(fill = ..level.., alpha = ..level..),size = 2, bins = 25, geom = 'polygon') + geom_density2d(aes(x = long, y = lati, fill = ..level.. , alpha = ..level..),bins = 25, colour = "black") + scale_fill_gradient(low = "green", high = "red") + scale_alpha(range = c(0.0, 0.25), guide = FALSE) + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82)) + guides(fill = guide_colorbar(barwidth = 1.5, barheight = 10)) + geom_point(data=df_lat, aes(x=long, y=lati, color=factor(clust)), size=1) +geom_point(data=kmc_lat, aes(x=long, y=lati), size=1, fill="black")
 ```
+
+This kind of analysis has a broad applicability in terms of market use
+as well as individual use. For example, you could use this to identify crime hotspots, or areas with a lot of traffic accidents to devise safe walking routes for students and school children. I can see this as a great quantitative way of informing house buyers about different areas they might be looking at.
+
+There is informative power for a range of applications, e.g., looking at UChicago campus, there is definitely a bubble - which could be attributed to, for example, good or effective policing.
+
+So we have unsupervised classification as well as detection! In other words this can be used for monitoring practices,e.g., are certain policies (relating to combating crime) effective?
