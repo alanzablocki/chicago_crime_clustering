@@ -224,17 +224,17 @@ str(cl)
 
 ```
 ## List of 9
-##  $ cluster     : Named int [1:804] 3 2 5 1 1 4 3 2 5 3 ...
+##  $ cluster     : Named int [1:804] 2 5 4 3 3 4 2 5 1 2 ...
 ##   ..- attr(*, "names")= chr [1:804] "54" "55" "62" "64" ...
 ##  $ centers     : num [1:5, 1:2] -87.6 -87.6 -87.6 -87.6 -87.6 ...
 ##   ..- attr(*, "dimnames")=List of 2
 ##   .. ..$ : chr [1:5] "1" "2" "3" "4" ...
 ##   .. ..$ : chr [1:2] "long" "lati"
 ##  $ totss       : num 0.31
-##  $ withinss    : num [1:5] 0.00987 0.00992 0.01345 0.00908 0.01815
-##  $ tot.withinss: num 0.0605
-##  $ betweenss   : num 0.25
-##  $ size        : int [1:5] 148 133 162 142 219
+##  $ withinss    : num [1:5] 0.00924 0.01851 0.00465 0.01298 0.01126
+##  $ tot.withinss: num 0.0566
+##  $ betweenss   : num 0.254
+##  $ size        : int [1:5] 172 190 111 190 141
 ##  $ iter        : int 4
 ##  $ ifault      : int 0
 ##  - attr(*, "class")= chr "kmeans"
@@ -333,3 +333,52 @@ The next steps are:
 1 - Increase the number of clusters in k-means to cover smaller areas
 2 - Perform hierarchical clustering and invetigate a useful upper bound for a cluster
 3 - Look at different clustering methods like dbscan, pam, clara and their possible application to this problem.
+4 - Analyze clusters for smaller area, immediately surrounding the HP UofC campus
+
+
+```r
+set.seed(1234)
+dfX2 <- data.frame(long=theft14$long,lati=theft14$lati)
+d <- geo.dist(dfX2)
+hc <- hclust(d)
+plot(hc) # plot dendrogram
+```
+
+![](index_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+
+```r
+dfX2$clust <- cutree(hc,k=10)
+ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + geom_point(data=dfX2, aes(x=long, y=lati, color=factor(clust)), size=3) + geom_point(aes(x = long, y = lati), size = 1, fill = "red", shape = 21) + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82))
+```
+
+![](index_files/figure-html/unnamed-chunk-14-2.png)<!-- -->
+
+
+```r
+set.seed(1234)
+dfX2 <- data.frame(long=theft14$long,lati=theft14$lati)
+d <- geo.dist(dfX2)
+hc <- hclust(d)
+plot(hc) # plot dendrogram
+```
+
+![](index_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+
+```r
+dfX2$clust <- cutree(hc,k=40)
+ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + geom_point(data=dfX2, aes(x=long, y=lati, color=factor(clust)), size=3) + geom_point(aes(x = long, y = lati), size = 1, fill = "red", shape = 21) + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82))
+```
+
+![](index_files/figure-html/unnamed-chunk-15-2.png)<!-- -->
+How does k-means perform for 40 clusters?
+
+```r
+set.seed(1234)
+dfX <- data.frame(long=theft14$long,lati=theft14$lati)
+km <- kmeans(dfX,centers=40)
+kmc <- data.frame(long=km$centers[,1],lati=km$centers[,2])
+dfX$clust <- km$cluster
+ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82)) + guides(fill = FALSE,alpha=FALSE,size=FALSE) + geom_point(data=dfX, aes(x=long, y=lati, color=factor(clust)), size=2) + geom_point(data=kmc, aes(x=long, y=lati), size=2)
+```
+
+![](index_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
