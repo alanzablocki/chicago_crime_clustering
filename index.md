@@ -224,17 +224,17 @@ str(cl)
 
 ```
 ## List of 9
-##  $ cluster     : Named int [1:804] 2 5 4 3 3 4 2 5 1 2 ...
+##  $ cluster     : Named int [1:804] 4 3 5 2 2 5 4 3 1 4 ...
 ##   ..- attr(*, "names")= chr [1:804] "54" "55" "62" "64" ...
 ##  $ centers     : num [1:5, 1:2] -87.6 -87.6 -87.6 -87.6 -87.6 ...
 ##   ..- attr(*, "dimnames")=List of 2
 ##   .. ..$ : chr [1:5] "1" "2" "3" "4" ...
 ##   .. ..$ : chr [1:2] "long" "lati"
 ##  $ totss       : num 0.31
-##  $ withinss    : num [1:5] 0.00924 0.01851 0.00465 0.01298 0.01126
+##  $ withinss    : num [1:5] 0.00924 0.00465 0.01126 0.01851 0.01298
 ##  $ tot.withinss: num 0.0566
 ##  $ betweenss   : num 0.254
-##  $ size        : int [1:5] 172 190 111 190 141
+##  $ size        : int [1:5] 172 111 141 190 190
 ##  $ iter        : int 4
 ##  $ ifault      : int 0
 ##  - attr(*, "class")= chr "kmeans"
@@ -312,13 +312,14 @@ df_lat$clust <- km_lat$cluster
 df_with_dist$clust <- km_dist$cluster
 kmc_lat <- data.frame(long=km_lat$centers[,1],lati=km_lat$centers[,2])
 kmc_dist <- data.frame(long=km_dist$centers[,1],lati=km_dist$centers[,2])
-
+# solution based on distances
 ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + geom_point(data=df_with_dist, aes(x=long, y=lati, color=factor(clust)), size=3) + geom_point(aes(x = long, y = lati), size = 1, fill = "red", shape = 21) + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82))
 ```
 
 ![](index_files/figure-html/unnamed-chunk-13-2.png)<!-- -->
 
 ```r
+# solution based on long/lat pairs with cluster centres in black
 ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + geom_point(data=df_lat, aes(x=long, y=lati, color=factor(clust)), size=3) + geom_point(aes(x = long, y = lati), size = 1, fill = "red", shape = 21) + geom_point(data=kmc_lat, aes(x=long, y=lati), size=2, fill="black") + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82))
 ```
 
@@ -337,6 +338,7 @@ The next steps are:
 
 
 ```r
+# hierarchial clustering with a cut-off at 10
 set.seed(1234)
 dfX2 <- data.frame(long=theft14$long,lati=theft14$lati)
 d <- geo.dist(dfX2)
@@ -355,6 +357,7 @@ ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = l
 
 
 ```r
+# hierarchial clustering with a cut-off at 40
 set.seed(1234)
 dfX2 <- data.frame(long=theft14$long,lati=theft14$lati)
 d <- geo.dist(dfX2)
@@ -382,3 +385,10 @@ ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = l
 ```
 
 ![](index_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+We end with a coloured heat map with cluster solution using k-means with k=10.
+
+```r
+ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + stat_density2d(aes(fill = ..level.., alpha = ..level..),size = 2, bins = 25, geom = 'polygon') + geom_density2d(aes(x = long, y = lati, fill = ..level.. , alpha = ..level..),bins = 25, colour = "black") + scale_fill_gradient(low = "green", high = "red") + scale_alpha(range = c(0.0, 0.25), guide = FALSE) + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82)) + guides(fill = guide_colorbar(barwidth = 1.5, barheight = 10)) + geom_point(data=df_lat, aes(x=long, y=lati, color=factor(clust)), size=1) +geom_point(data=kmc_lat, aes(x=long, y=lati), size=1, fill="black")
+```
+
+![](index_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
