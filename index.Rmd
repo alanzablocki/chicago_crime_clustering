@@ -10,9 +10,164 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## Setup
 
-## R Markdown
+We load the required libraries.
+```{r}
+library(raster)
+library(sp)
+library(maptools)
+gpclibPermit()
+library(maptools)
+library(mapdata)
+library(ggmap)
+library(ggplot2)
+library(geosphere)
+library(maps)
+library(animation)
+```
+Load the theft data for Chicago
+```{r}
+mydata  = read.csv("Chicago_crimes_2008_somethefts_only_HP.csv")
+head(mydata)
+```
+Select only relevant columns
+```{r}
+mydata <- mydata[,c(2,3,5,8,9,10)]
+colnames(mydata) <- c("iucr","offense","locat","year","lati","long")
+```
+Subset data, include street theft only
+```{r}
+mydata_STREET_THEFT <- mydata[mydata$locat == "STREET", ]
+```
+Remove any NAs
+```{r}
+mydata_cleaned <- na.omit(mydata_STREET_THEFT)
+```
+Select 2014 as an example
+```{r}
+theft14 <- mydata_cleaned[mydata_cleaned$year == "2014", ]
+head(theft14)
+dim(theft14)
+```
+Find the range for long/lat in this dataset
+```{r}
+min(abs(theft14[,6]))
+min(abs(theft14[,5]))
+max(abs(theft14[,6]))
+max(abs(theft14[,5]))
+```
+```{r}
+# Get a map of Chicago with appropriate zoom level
+require(ggmap)
+map_of_Chicago <- get_map(location = c(long = -87.60, lati = 41.80), zoom = 13, maptype = "roadmap", scale = 2)
+```
+For now we will leave out the highly zoomed in area around the University of Chicago
+```r
+small_plot <- ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + geom_density2d(aes(x = long, y = lati, fill = ..level.. , alpha = ..level..),bins = 25, colour = "black") + coord_map(projection="mercator", xlim=c(-87.607,-87.585), ylim=c(41.785,41.803)) + guides(fill = FALSE,alpha=FALSE,size=FALSE) + geom_point(aes(x = long, y = lati), size = 1, fill = "red", shape = 21)
+small_plot
+```
+```{r largerHP, echo = FALSE}
+# larger area around HP
+largerHP <- ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + geom_density2d(aes(x = long, y = lati, fill = ..level.. , alpha = ..level..),bins = 25, colour = "black") + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82)) + guides(fill = FALSE,alpha=FALSE,size=FALSE) + geom_point(aes(x = long, y = lati), size = 1, fill = "red", shape = 21)
+plot(largerHP)
+```
+```{r}
+# Perform k-means clustering on the whole data set.
+# Match x and y axis to long / lati
+kmeans_data <- theft14[,6:5]
+head(kmeans_data)
+```
+```{r}
+# Find an appropriate number of clusters based on 'elbow' plot
+crime0 <- na.omit(kmeans_data)
+crime <- data.matrix(crime0)
+str(crime)
+cl <- kmeans(crime,5)
+class(cl)
+str(cl)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# helper functions to get the 'elbow' plot
+kmeans.wss.k <- function(crime, k){
+  km = kmeans(crime, k)
+  return (km$tot.withinss)
+}
+kmeans.dis <- function(crime, maxk){
+  dis=(nrow(crime)-1)*sum(apply(crime,2,var))
+  dis[2:maxk]=sapply (2:maxk, kmeans.wss.k, crime=crime)
+  return(dis)
+}
+```
+```{r DIST1, echo=FALSE}
+# Start with maximum of 20 clusters
+maxk = 20
+dis = kmeans.dis(crime, maxk);
+DIST1 <- plot(1:maxk, dis, type='b', xlab="Number of Clusters",
+     ylab="Distortion",
+     col="blue")
+DIST1
+```
+```{r}
+# Seems like 10 clusters should do it. Let's animate this.
+# animation is nice, but takes up a lot of the write up
+#cl<- kmeans.ani(kmeans_data, 10)
+```
+```{r}
+#Examine the cluster plot
+#fit1 <- kmeans(crime,10)
+#mydata1 <- data.frame(mydata,fit1$cluster)
+#aggregate(crime,by=list(fit1$cluster),FUN=mean)
+#clusplot(mydata1,fit1$cluster, color = TRUE, shade = TRUE, labels = 2, lines=0)
+```
+```{r}
+# set random seed for reproducing results
+# plotting clustered data coloured by cluster solution using k-means
+set.seed(1234)
+dfX <- data.frame(long=theft14$long,lati=theft14$lati)
+km <- kmeans(dfX,centers=10)
+kmc <- data.frame(long=km$centers[,1],lati=km$centers[,2])
+dfX$clust <- km$cluster
+ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + geom_density2d(aes(x = long, y = lati, fill = ..level.. , alpha = ..level..),bins = 25, colour = "black") + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82)) + guides(fill = FALSE,alpha=FALSE,size=FALSE) + geom_point(aes(x = long, y = lati), size = 2, fill = "red", shape = 21) + geom_point(data=dfX, aes(x=long, y=lati, color=factor(clust)), size=2) + geom_point(data=kmc, aes(x=long, y=lati), size=2)
 
+# What if we perform the clustering on distances instead of latitude/longitude pairs?
 
+# helper function
+
+geo.dist = function(df) {
+  require(geosphere)
+  d <- function(i,z){         # z[1:2] contain long, lat
+    dist <- rep(0,nrow(z))
+    dist[i:nrow(z)] <- distHaversine(z[i:nrow(z),1:2],z[i,1:2])
+    return(dist)
+  }
+  dm <- do.call(cbind,lapply(1:nrow(df),d,df))
+  return(as.dist(dm))
+}
+
+df_lat <- data.frame(long=theft14$long,lati=theft14$lati)
+df_dist <- geo.dist(df_lat)
+set.seed(1234)
+km_dist <- kmeans(df_dist,centers = 10)
+set.seed(1234)
+km_lat <- kmeans(df_lat,centers = 10)
+df_with_dist <- data.frame(long=theft14$long,lati=theft14$lati)
+df_lat$clust <- km_lat$cluster
+df_with_dist$clust <- km_dist$cluster
+kmc_lat <- data.frame(long=km_lat$centers[,1],lati=km_lat$centers[,2])
+kmc_dist <- data.frame(long=km_dist$centers[,1],lati=km_dist$centers[,2])
+
+ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + geom_point(data=df_with_dist, aes(x=long, y=lati, color=factor(clust)), size=3) + geom_point(aes(x = long, y = lati), size = 1, fill = "red", shape = 21) + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82))
+
+ggmap(map_of_Chicago, extent = "normal", maprange=FALSE) %+% theft14 + aes(x = long, y = lati) + geom_point(data=df_lat, aes(x=long, y=lati, color=factor(clust)), size=3) + geom_point(aes(x = long, y = lati), size = 1, fill = "red", shape = 21) + geom_point(data=kmc_lat, aes(x=long, y=lati), size=2, fill="black") + coord_map(projection="mercator", xlim=c(-87.63,-87.57), ylim=c(41.77,41.82))
+
+```
+
+Performing k-means on crime data with longitude and latitude gives similar results to when we run k-means on distances, but some of the data is assigned to different clusters. 
+
+Although, 10 clusters seems like enough, in reality we do care about a maximum distance that a cluster will cover. In the map, we see that each cluster covers a number of blocks, which is not ideal. 
+
+The next steps are:
+
+1 - Increase the number of clusters in k-means to cover smaller areas
+2 - Perform hierarchical clustering and invetigate a useful upper bound for a cluster
+3 - Look at different clustering methods like dbscan, pam, clara and their possible application to this problem.
